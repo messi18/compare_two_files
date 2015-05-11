@@ -1,4 +1,5 @@
 import sys
+import itertools
 
 field_names=['id','ccy1','ccy2','settle_date']
 field_key_index=0
@@ -16,15 +17,15 @@ def save_report(f,diff_cnt):
 
 def compare_line(line1,line2):
   same,diff=[],[]
-  if len(line1) == 0:
+  if not line1 or len(line1) == 0:
     items1=[]
   else:
-    items1=line1.split(field_separator)
+    items1=line1.rstrip().split(field_separator)
 
-  if len(line2) == 0:
+  if not line2 or len(line2) == 0:
     items2=[]
   else:
-    items2=line2.split(field_separator)
+    items2=line2.rstrip().split(field_separator)
 
   if len(items1) != len(items2):
     return (False,[("field_count",len(items1),len(items2))])
@@ -46,19 +47,14 @@ file1,file2,output=sys.argv[1],sys.argv[2],sys.argv[3]
 with open(file1) as f1, open (file2) as f2, open(output,'w') as output_f:
   diff_cnt=0
   line_cnt=0
-  while True:
-    line1,line2=f1.readline(),f2.readline()
+  for line1,line2 in itertools.izip_longest(f1,f2):
     line_cnt += 1
-
-    if not line1 and not line2:
-      print 'Reach EOF of two files'
-      break
-    elif not line1:
+    if not line1:
       print 'Read EOF of left file' 
     elif not line2:
       print 'Reach EOF of right file'
 
-    match,cmp_results=compare_line(line1.rstrip(),line2.rstrip())
+    match,cmp_results=compare_line(line1,line2)
     if not match:
       diff_cnt += len(cmp_results)
       save_diffs(output_f,line_cnt,cmp_results)
